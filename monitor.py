@@ -2,6 +2,8 @@ import requests
 import json
 import csv
 import os
+import argparse
+from datetime import datetime
 from dotenv import load_dotenv
 
 
@@ -14,6 +16,11 @@ HEADERS = {
     "hibp-api-key": API_KEY
 }
 
+def validar_configuracao():
+    if not API_KEY:
+        print("API Key não encontrada! Verifique o arquivo .env")
+        exit(1)
+    print("Configuração validada.")
 
 def verificar_email(email):
     print(f"\n🔍 Consultando: {email}")
@@ -50,5 +57,32 @@ def verificar_email(email):
     except Exception as e:
         print(f"Erro de conexão: {e}")
 
+def gerar_relatorio(email, vazamentos):
+    if not vazamentos:
+        print("Nenhum dado para salvar.")
+        return
+
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    nome_arquivo = f"relatorio_{timestamp}.csv"
+
+    with open(nome_arquivo, mode="w", newline="", encoding="utf-8") as arquivo:
+        writer = csv.writer(arquivo)
+
+        writer.writerow(["Email", "Serviço", "Data do Vazamento", "Total Afetados", "Descrição"])
+
+        for item in vazamentos:
+            writer.writerow([
+                email,
+                item["Title"],
+                item["BreachDate"],
+                item["PwnCount"],
+                item["Description"][:100]
+            ])
+
+    print(f"\nRelatório salvo: {nome_arquivo}")
+
+
 email_teste = input("Digite o e-mail para consultar: ")
-verificar_email(email_teste)
+vazamentos = verificar_email(email_teste)
+gerar_relatorio(email_teste, vazamentos)
