@@ -23,7 +23,7 @@ def validar_configuracao():
     print("Configuração validada.")
 
 def verificar_email(email):
-    print(f"\n🔍 Consultando: {email}")
+    print(f"\n Consultando: {email}")
     print("-" * 40)
 
     url = f"{BASE_URL}/breachedaccount/{email}?truncateResponse=false"
@@ -41,6 +41,7 @@ def verificar_email(email):
                 print(f" Afetados: {item['PwnCount']:,}")
                 print(f" Descrição: {item['Description'][:80]}...")
                 print()
+            return vazamentos
 
         elif resposta.status_code == 404:
             print("Nenhum vazamento encontrado para este e-mail!")
@@ -60,15 +61,14 @@ def verificar_email(email):
 def gerar_relatorio(email, vazamentos):
     if not vazamentos:
         print("Nenhum dado para salvar.")
-        return
+        return 
 
     
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y/%m/%d _%H%M%S")
     nome_arquivo = f"relatorio_{timestamp}.csv"
 
     with open(nome_arquivo, mode="w", newline="", encoding="utf-8") as arquivo:
         writer = csv.writer(arquivo)
-
         writer.writerow(["Email", "Serviço", "Data do Vazamento", "Total Afetados", "Descrição"])
 
         for item in vazamentos:
@@ -82,7 +82,31 @@ def gerar_relatorio(email, vazamentos):
 
     print(f"\nRelatório salvo: {nome_arquivo}")
 
+def main ():
+    parser = argparse.ArgumentParser(
+        description= "Monitor de Vazamento de Dados"
+    )
+    
+    parser.add_argument(
+        "emails",
+        nargs = '+',
+        help = "Um ou mais e-mail para consultar"
+    )
+    args = parser.parse_args()
 
-email_teste = input("Digite o e-mail para consultar: ")
-vazamentos = verificar_email(email_teste)
-gerar_relatorio(email_teste, vazamentos)
+    validar_configuracao()
+
+    resultados = {}
+
+    for email in args.emails:
+        vazamentos = verificar_email(email)
+        if vazamentos:
+            resultados[email] = vazamentos
+
+
+    for email, vazamentos in resultados.items():
+        gerar_relatorio(email, vazamentos)
+
+
+if __name__ == "__main__":
+    main()
